@@ -4,7 +4,7 @@ import json
 
 app = Flask(__name__)
 
-# Fixed: Added missing commas between dictionary fields
+# Tracked player stats
 player_stats = {
     "health": 100,
     "max_health": 100,
@@ -15,8 +15,7 @@ player_stats = {
     "current_enemy": None
 }
 
-# Dummy current_scene dictionary just so your render_template doesn't crash 
-# (Make sure this matches how you actually fetch your game's story text!)
+# Scene fallback data (Replace this structure with your actual story engine!)
 current_scene = {
     "text": "Welcome to the temple.",
     "choices": []
@@ -30,24 +29,23 @@ def spawn_enemy(enemy_name, hp, attack_power):
         "attack": attack_power
     }
 
-# Fixed: Pulled routes OUT of the spawn_enemy function so they are top-level
 @app.route("/attack")
 def attack():
     enemy = player_stats["current_enemy"]
     if not enemy or enemy["hp"] <= 0:
         return redirect(url_for("scene", scene_id="you win"))
 
-    # Player doing dmg
+    # Player deals damage
     player_damage = random.randint(5, 15) + (player_stats["level"] * 2)
     enemy["hp"] -= player_damage
 
-    # Fixed: Corrected "enemy hp" syntax and capitalized None
+    # Enemy dies
     if enemy["hp"] <= 0:
         player_stats["xp"] += random.randint(15, 30)
         player_stats["gold"] += random.randint(10, 30)
         player_stats["current_enemy"] = None
         
-        # Maybe level up
+        # Level up logic
         if player_stats["xp"] >= player_stats["level"] * 100:
             player_stats["level"] += 1
             player_stats["max_health"] += random.randint(5, 20)
@@ -55,7 +53,7 @@ def attack():
             
         return redirect(url_for("scene", scene_id="combat_win"))
 
-    # Fixed: Moved enemy retaliation inside the combat sequence properly
+    # Enemy retaliates
     enemy_damage = random.randint(2, enemy["attack"])
     player_stats["health"] -= enemy_damage
 
@@ -79,7 +77,6 @@ def use_item(item_name):
 
 @app.route("/save")
 def save_game():
-    # Fixed: Changed 'f' to 'file' to match the open block variable
     with open("savefile.json", "w") as file:
         json.dump(player_stats, file)
     return redirect(request.referrer or url_for("index"))
@@ -88,7 +85,6 @@ def save_game():
 @app.route("/load")
 def load_game():
     global player_stats
-    # Fixed: Corrected the except syntax and changed 'f' to 'file'
     try:
         with open("savefile.json", "r") as file:
             player_stats = json.load(file)
@@ -97,81 +93,12 @@ def load_game():
     return redirect(url_for("scene", scene_id="start"))
 
 
-# Note: Usually this render should live inside a main route like @app.route("/") 
-# or @app.route("/scene/<scene_id>"). Make sure it's attached to an actual route!
 @app.route("/")
 def index():
-    # Fixed: Added missing comma after choices line
     return render_template(
         "the-forgotten-temple.html",
         story_text=current_scene["text"],
         choices=current_scene["choices"],
-        stats=player_stats,
-        enemy=player_stats["current_enemy"]
-    )
-
-
-if __name__ == "__main__":
-    app.run(debug=True)        if enemy hp <= 0:
-            player_stats["xp"] += random.randint(15, 30)
-            player_stats["gold"] += random.randint(10, 30)
-            player_stats["current_enemy"] = none
-
-        # mabye level up xd
-
-        if player_stats["xp"] >= player_stats["level"] * 100:
-            player_stats["level"] += 1
-            player_stats["max_health"] += random.randint(5, 20)
-            player_stats["health"] = player_stats["max_health"]
-        return redirect(url_for("scene", scene_id="combat_win"))
-
-
-    # enemy dmg back
-    enemy_damage = random.randint(2, enemy["attack"])
-    player_stats["health"] -= enemy_damage
-
-    if player_stats["health"] <= 0:
-        return redirect(url_for("scene", scene_id="game_over"))
-
-    
-    return redirect(url_for("scene", scene_id="combat_loop"))
-
-
-    @app.route("/use_item/<item_name>")
-    def use_item(item_name):
-        if item_name in player_stats["inventory"]:
-            if item_name == "Healing Potion":
-                player_stats["health"] = min(player_stats["max_health"], player_stats["health"] + random.randint(15, 30)) 
-                player_stats["inventory"].remove(item_name)
-            elif item_name == "Iron_Key":
-
-                pass
-
-
-        return redirect(request.referrer or url_for("index"))
-
-
-    @app.route("/save")
-    def save_game():
-        with open ("savefile.json", "w") as file:
-            json.dump(player_stats, f)
-        return redirect(request.referrer or url_for("index"))
-        
-    @app.route("/load")
-    def load_game():
-        try:
-            with open("savefile.json", "r") as file:
-                player_stats = json.load(f)
-        except: FileNotFoundError:
-
-            pass
-        return redirect(url_for("scene", scene_id="start"))
-
-
-    return render_template(
-        "the-forgotten-temple.html",
-        story_text=current_scene["text"],
-        choices=current_scene["choices"]
         stats=player_stats,
         enemy=player_stats["current_enemy"]
     )
