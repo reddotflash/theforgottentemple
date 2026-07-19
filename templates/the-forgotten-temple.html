@@ -53,9 +53,9 @@ body{
     margin-top:10px;
 }
 .health{
-    width:80%;
     height:100%;
     background:#22c55e;
+    transition: width 0.3s ease;
 }
 .inventory{
     list-style:none;
@@ -65,6 +65,9 @@ body{
     background:#333;
     padding:8px;
     border-radius:6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 /* GAME AREA */
 .game{
@@ -94,7 +97,11 @@ h1{
     display:grid;
     gap:15px;
 }
-button{
+/* Turned buttons into anchor-compatible blocks */
+.btn{
+    display: block;
+    text-align: center;
+    text-decoration: none;
     padding:16px;
     border:none;
     border-radius:10px;
@@ -104,9 +111,34 @@ button{
     cursor:pointer;
     transition:.3s;
 }
-button:hover{
+.btn:hover{
     background:#1d4ed8;
     transform:translateY(-3px);
+}
+.btn-use {
+    background: #e11d48;
+    color: white;
+    padding: 4px 8px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 12px;
+}
+.btn-use:hover {
+    background: #be123c;
+}
+.system-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+.btn-system {
+    flex: 1;
+    background: #4b5563;
+    padding: 10px;
+    font-size: 14px;
+}
+.btn-system:hover {
+    background: #374151;
 }
 /* FOOTER */
 .footer{
@@ -128,48 +160,76 @@ button:hover{
 </head>
 <body>
 <div class="game-container">
-<!-- PLAYER SECTION -->
+<!-- PLAYER SECTION (DYNAMIC) -->
 <div class="player">
 <h2>⚔ Player</h2>
 <div class="card">
 <p>❤️ Health</p>
 <div class="health-bar">
-<div class="health"></div>
+<!-- Dynamically calculates percentage for the CSS width -->
+<div class="health" style="width: {{ (stats.health / stats.max_health) * 100 }}%;"></div>
 </div>
-<p>80 / 100</p>
+<p>{{ stats.health }} / {{ stats.max_health }}</p>
 </div>
 <div class="card">
-<p>💰 Gold: 25</p>
-<p>⭐ Level: 1</p>
-<p>✨ XP: 0 / 100</p>
+<p>💰 Gold: {{ stats.gold }}</p>
+<p>⭐ Level: {{ stats.level }}</p>
+<p>✨ XP: {{ stats.xp }} / {{ stats.level * 100 }}</p>
 </div>
 <div class="card">
 <h3>🎒 Inventory</h3>
 <ul class="inventory">
-<li>🗡 Iron Sword</li>
-<li>🗝 Old Key</li>
-<li>🧪 Healing Potion</li>
+{% if stats.inventory %}
+    {% for item in stats.inventory %}
+        <li>
+            <span>{{ item }}</span>
+            <a href="{{ url_for('use_item', item_name=item) }}" class="btn-use">Use</a>
+        </li>
+    {% endfor %}
+{% else %}
+    <li style="color: #666; font-style: italic;">Empty</li>
+{% endif %}
 </ul>
 </div>
+
+<!-- Save and Load UI -->
+<div class="system-actions">
+    <a href="{{ url_for('save_game') }}" class="btn btn-browser btn-system">💾 Save</a>
+    <a href="{{ url_for('load_game') }}" class="btn btn-browser btn-system">📂 Load</a>
 </div>
-<!-- STORY SECTION -->
+</div>
+
+<!-- STORY & ACTIONS SECTION -->
 <div class="game">
 <h1>🏰 The Forgotten Temple</h1>
 <div class="story">
-<h2>Chapter 1: The Entrance</h2>
-<p>
-You stand before a massive stone doorway covered in ancient symbols.
-The wind howls through the ruins as you hear something moving inside.
-</p>
-<br>
-<p>
-A mysterious path lies ahead. What will you do?
-</p>
+<h2>Adventure Log</h2>
+<p>{{ story_text }}</p>
+
+<!-- If an enemy exists, display its current status -->
+{% if enemy %}
+    <div class="card" style="margin-top: 20px; border: 1px solid #991b1b;">
+        <p style="color: #ef4444; font-weight: bold;">⚠️ Enemy Spotted: {{ enemy.name }}</p>
+        <p>HP: {{ enemy.hp }} / {{ enemy.max_hp }} | Attack: {{ enemy.attack }}</p>
+    </div>
+{% endif %}
 </div>
+
 <div class="choices">
-<button>🚪 Enter the Temple</button>
-<button>🔍 Search the Ruins</button>
-<button>🏃 Leave the Area</button>
+<!-- If there's an active enemy, display the attack button -->
+{% if enemy %}
+    <a href="{{ url_for('attack') }}" class="btn" style="background: #dc2626;">⚔️ Attack Enemy</a>
+{% endif %}
+
+<!-- Dynamic choices loop -->
+{% if choices %}
+    {% for choice in choices %}
+        <a href="/scene/{{ choice.next_scene_id }}" class="btn">{{ choice.text }}</a>
+    {% endfor %}
+{% else %}
+    <!-- Fallback default buttons if choices is empty -->
+    <a href="/" class="btn">🚪 Keep Exploring</a>
+{% endif %}
 </div>
 <div class="footer">
 Text Adventure v1.0
