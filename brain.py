@@ -91,7 +91,7 @@ def spawn_enemy(enemy_name, hp, attack_power):
 
 
     return render_template(
-        "game.html",
+        "the-forgotten-temple.html",
         story_text=current_scene["text"],
         choices=current_scene["choices"]
         stats=player_stats,
