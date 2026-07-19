@@ -97,3 +97,7 @@ def spawn_enemy(enemy_name, hp, attack_power):
         stats=player_stats,
         enemy=player_stats["current_enemy"]
     )
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
